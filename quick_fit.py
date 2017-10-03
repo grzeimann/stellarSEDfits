@@ -39,15 +39,15 @@ def parse_args(argv=None):
                         action="count", default=0)
 
     parser.add_argument("-wi","--wave_init",
-                        help='''Initial wavelength for bin''',
+                        help='''Initial wavelength for bin, default=3540''',
                         type=float, default=3540)
 
     parser.add_argument("-wf","--wave_final",
-                        help='''Final wavelength for bin''',
+                        help='''Final wavelength for bin, default=5540''',
                         type=float, default=5540)
 
     parser.add_argument("-bs","--bin_size",
-                        help='''Bin size for wavelength''',
+                        help='''Bin size for wavelength, default=100''',
                         type=float, default=100)
                         
     args = parser.parse_args(args=argv)
