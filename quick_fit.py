@@ -111,13 +111,14 @@ def main():
     
     for lnp,sh,Id,mg in zip(lnprob,shot,ID,data[:,5]):
         print(sh, Id)
-        vmax=np.sort(lnp)[-2]
+        vmax=np.sort(lnp)[-4]
         fig = plt.figure(figsize=(8,6))
         ax1 = plt.subplot(2,1,1)
         ax2 = plt.subplot(2,1,2)
         ax1.set_position([0.15,0.35,0.7,0.5])
         ax2.set_position([0.15,0.15,0.7,0.2])
-        sc = ax1.scatter(stargrid[:,2],stargrid[:,3],c=lnp, vmin=vmax-7.5, 
+        vmin = vmax - 2.5
+        sc = ax1.scatter(stargrid[:,2],stargrid[:,3],c=lnp, vmin=vmin, 
                          vmax=vmax)
         ax1.xaxis.tick_top()
         ax1.xaxis.set_label_position('top') 
@@ -127,7 +128,12 @@ def main():
         ind = np.where((vmax - lnp)<2.5)[0]
         for i in ind:
             fac = 10**(-0.4*(mg - stargrid[i,0]))
-            ax2.plot(wave, fac * np.interp(wave,waveo,spectra[i]))
+            ax2.plot(wave, fac * np.interp(wave,waveo,spectra[i]),
+                     color = sc.cmap((lnp[i]-vmin)/(vmax-vmin)))
+        ax2.set_xlabel('Wavelength')
+        ax2.set_ylabel(r'F$_{\lambda}$')
+        ax1.set_xlabel('Log Temp')
+        ax1.set_ylabel('Log g')
         plt.savefig(op.join('plots','%06d_%i_prob.png' %(sh,Id)))
         plt.close()
 if __name__=='__main__':
