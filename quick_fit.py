@@ -252,8 +252,9 @@ def main():
                             *10**(-.4*ebv*extinction))
         if len(normspec)>2:
             avgspec = biweight_location(normspec,axis=(0,))
-            stdspec = np.sqrt(biweight_midvariance(normspec,axis=(0,))**2 +
-                              err_vector[1]**2*avgspec**2)
+            mn = np.min(normspec, axis=0)
+            mx = np.max(normspec, axis=0)
+            stdspec = mx/2. - mn/2.
         else:
             avgspec = np.mean(normspec, axis=(0,))
             stdspec = 0.2 * avgspec
