@@ -14,6 +14,10 @@ from distutils.dir_util import mkpath
 from astropy.io import fits
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from utils import biweight_location, biweight_midvariance, biweight_bin
+from astroquery.vizier import Vizier 
+import astropy.units as u 
+import astropy.coordinates as coord
+from astropy.coordinates import SkyCoord
 
 def parse_args(argv=None):
     # Arguments to parse include ssp code, metallicity, isochrone choice, 
@@ -172,7 +176,51 @@ def make_plot(vmax, errbounds, stargrid, lnp, ind, normspec,
     ax1.set_ylabel('Log g')
     plt.savefig(op.join('plots','%06d_%i_prob.png' %(sh,Id)))
     plt.close()
-   
+
+
+def queryGAIA2(ra, dec, boxsize, maxsources=10000):
+    """
+    Queries USNO_A2.
+    ra  = center RA of field
+    dec = center DEC of field
+    radius = determines size of radius around ra/dec for which sources should
+              be retrieved
+    return array of stars with format
+    IDa IDb RA DEC 0. B R 0. 0.
+    """
+
+    vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
+                             'phot_g_mean_mag', '_RAJ2000', '_DEJ2000',
+                             'pmRA', 'pmDE', 'Plx', 'e_Plx'],
+                    row_limit = maxsources) 
+ 
+    field = coord.SkyCoord(ra=ra, dec=dec, 
+                           unit=(u.deg, u.deg), 
+                           frame='fk5')
+    D = vquery.query_region(field, 
+                               width=("%fd" % boxsize), 
+                               catalog="I/345/gaia2")
+    try:
+        Data =  D[0] 
+    except:
+        return np.array([])
+    oo = []
+    g_i = 1.  # g-i color
+    for i, obj in enumerate(Data['Source']):
+        oid_a = Data['Source'][i]
+        oid_b = 0
+        ra = Data['_RAJ2000'][i]
+        dec = Data['_DEJ2000'][i]
+        pmra = Data['pmRA'][i]
+        pmde = Data['pmDE'][i]
+        G = Data['Gmag'][i]
+        g = G + 0.0939 + 0.6758 * g_i + 0.04 * g_i**2 - 0.003 * g_i**3
+        if np.any([j for j in Data.mask[i]]):
+            continue
+        oo.append([oid_a, oid_b, ra, dec, 0., g, 0., 0., 0., pmra, pmde])
+    return np.array(oo)   
+
+
 def main():
     args = parse_args()
     # Load Star Grid and star names (different data type, and this is a sol(n))
