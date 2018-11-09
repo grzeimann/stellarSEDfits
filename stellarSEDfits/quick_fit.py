@@ -13,7 +13,8 @@ import scipy.interpolate as scint
 from distutils.dir_util import mkpath
 from astropy.io import fits
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from utils import biweight_location, biweight_midvariance, biweight_bin
+from stellarSEDfits.utils import biweight_location, biweight_bin
+# from stellarSEDfits.utils import biweight_midvariance
 from astroquery.vizier import Vizier
 import astropy.units as u
 import astropy.coordinates as coord
@@ -237,7 +238,7 @@ def main(args=None):
     starnames = np.loadtxt(op.join(basedir, 'stargrid-150501.dat'),
                            usecols=[0], skiprows=1, dtype=str)
     # Get MILES wavelength array
-    p = fits.open(op.join('miles_spec', 'S'+starnames[0]+'.fits'))
+    p = fits.open(op.join(basedir, 'miles_spec', 'S'+starnames[0]+'.fits'))
     waveo = (p[0].header['CRVAL1'] + np.linspace(0, len(p[0].data)-1,
                                                  len(p[0].data))
              * p[0].header['CDELT1'])
