@@ -5,18 +5,19 @@ Created on Wed Oct  5 18:12:13 2016
 @author: gregz
 
 This code relies on original software from:
-Copyright (c) 2011-2016, Astropy Developers    
-Copyright (c) 2012, Free Software Foundation    
+Copyright (c) 2011-2016, Astropy Developers
+Copyright (c) 2012, Free Software Foundation
 
 """
 
 import numpy as np
 import sys
 
+
 def median_absolute_deviation(a, axis=None):
     """
-    Copyright (c) 2011-2016, Astropy Developers    
-    
+    Copyright (c) 2011-2016, Astropy Developers
+
     Compute the median absolute deviation.
 
     Returns the median absolute deviation (MAD) of the array elements.
@@ -52,7 +53,7 @@ def median_absolute_deviation(a, axis=None):
     See Also
     --------
     numpy.median
-    
+
     Note
     --------
     Copy of the astropy function with the "axis" argument added appropriately.
@@ -79,28 +80,30 @@ def median_absolute_deviation(a, axis=None):
 
     # calculated the median average deviation
     return func(np.abs(a - a_median), axis=axis)
-    
+
+
 def biweight_bin(xv, x, y):
     '''
     Compute the biweight location with a moving window of size "order"
 
     '''
-    diff_array = np.hstack([np.diff(xv),np.diff(xv)[-1]]) / 2.
+    diff_array = np.hstack([np.diff(xv), np.diff(xv)[-1]]) / 2.
     mxcol = 0
     sel_list = []
-    for i,v in enumerate(xv):
-        sel_list.append(np.where( (x>(xv[i]-diff_array[i])) 
-                                 *(x<(xv[i]+diff_array[i])))[0]) 
+    for i, v in enumerate(xv):
+        sel_list.append(np.where((x > (xv[i]-diff_array[i]))
+                                 * (x < (xv[i]+diff_array[i])))[0])
         mxcol = np.max([mxcol, len(sel_list[-1])])
-    
-    A = np.ones((len(xv),mxcol))*-999.
-    for i,v in enumerate(xv):
-        A[i,:len(sel_list[i])] = y[sel_list[i]]
+
+    A = np.ones((len(xv), mxcol))*-999.
+    for i, v in enumerate(xv):
+        A[i, :len(sel_list[i])] = y[sel_list[i]]
     C = np.ma.array(A, mask=(A == -999.).astype(np.int))
     return biweight_location(C, axis=(1,))
 
 
-def biweight_filter2d(a, Order, Ignore_central=(3,3), c=6.0, M=None, func=None):
+def biweight_filter2d(a, Order, Ignore_central=(3, 3), c=6.0, M=None,
+                      func=None):
     '''
     Compute the biweight location with a moving window of size "order"
 
@@ -110,99 +113,100 @@ def biweight_filter2d(a, Order, Ignore_central=(3,3), c=6.0, M=None, func=None):
         sys.exit(1)
     if not isinstance(Ignore_central, tuple):
         print("The ignore_central value should be an tuple")
-        sys.exit(1)   
+        sys.exit(1)
     for order in Order:
-        if order%2==0:
-            order+=1
+        if order % 2 == 0:
+            order += 1
     for ignore_central in Ignore_central:
-        if ignore_central%2==0:
-            ignore_central+=1
-    if ((Order[0]-3 <= Ignore_central[0] and Order[0]>1) 
-        or (Order[1]-3 <= Ignore_central[1] and Order[1]>1)):
+        if ignore_central % 2 == 0:
+            ignore_central += 1
+    if ((Order[0]-3 <= Ignore_central[0] and Order[0] > 1)
+        or (Order[1]-3 <= Ignore_central[1] and Order[1] > 1)):
         print("The max order-3 should be larger than max ignore_central.")
         sys.exit(1)
     if func is None:
         func = biweight_location
-        
+
     a = np.array(a, copy=False)
     if a.ndim != 2:
         print("Input array/list should be 2-dimensional")
         sys.exit()
 
-    yc = np.arange(Ignore_central[0]/2+1,Order[0]/2+1)
-    xc = np.arange(Ignore_central[1]/2+1,Order[1]/2+1)
-    ly = np.max([len(yc)*2,1])
-    lx = np.max([len(xc)*2,1])
+    yc = np.arange(Ignore_central[0]/2+1, Order[0]/2+1)
+    xc = np.arange(Ignore_central[1]/2+1, Order[1]/2+1)
+    ly = np.max([len(yc)*2, 1])
+    lx = np.max([len(xc)*2, 1])
     size = lx * ly
     A = np.ones(a.shape + (size,))*-999.
-    k=0
-    if Order[0]>1:
-        if Order[1]>1:
+    k = 0
+    if Order[0] > 1:
+        if Order[1] > 1:
             for i in yc:
                 for j in xc:
-                    A[:-i,:-j,k] = a[i:,j:]
-                    k+=1
+                    A[:-i, :-j, k] = a[i:, j:]
+                    k += 1
             for i in yc:
                 for j in xc:
-                    A[i:,j:,k] = a[:-i,:-j]
-                    k+=1
+                    A[i:, j:, k] = a[:-i, :-j]
+                    k += 1
             for i in yc:
                 for j in xc:
-                    A[:-i,j:,k] = a[i:,:-j]
-                    k+=1
+                    A[:-i, j:, k] = a[i:, :-j]
+                    k += 1
             for i in yc:
                 for j in xc:
-                    A[i:,:-j,k] = a[:-i,j:]
-                    k+=1
+                    A[i:, :-j, k] = a[:-i, j:]
+                    k += 1
         else:
             for i in yc:
-                A[:-i,:,k] = a[i:,:]
-                k+=1
+                A[:-i, :, k] = a[i:, :]
+                k += 1
             for i in yc:
-                A[i:,:,k] = a[:-i,:]
-                k+=1
+                A[i:, :, k] = a[:-i, :]
+                k += 1
     else:
         for j in xc:
-            A[:,:-j,k] = a[:,j:]
-            k+=1
+            A[:, :-j, k] = a[:, j:]
+            k += 1
         for j in xc:
-            A[:,j:,k] = a[:,:-j]
-            k+=1    
+            A[:, j:, k] = a[:, :-j]
+            k += 1
     C = np.ma.array(A, mask=(A == -999.).astype(np.int))
     return func(C, axis=(2,))
 
+
 def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
-  
-    if order%2==0:
-        order+=1
-    if ignore_central%2==0:
-        ignore_central+=1
+
+    if order % 2 == 0:
+        order += 1
+    if ignore_central % 2 == 0:
+        ignore_central += 1
     if func is None:
         func = biweight_location
     if ignore_central+3 >= order:
-        print('The order, %i, should be +3 higher than ignore_central, %i.' 
-              %(order, ignore_central))
+        print('The order, %i, should be +3 higher than ignore_central, %i.'
+              % (order, ignore_central))
         sys.exit(1)
     a = np.array(a, copy=False)
     if ignore_central > 0:
-        yc = np.arange(ignore_central/2+1,order/2+1)
+        yc = np.arange(ignore_central/2+1, order/2+1)
     else:
-        yc = np.arange(0,order/2+1)
-    ly = np.max([len(yc)*2,1])
+        yc = np.arange(0, order/2+1)
+    ly = np.max([len(yc)*2, 1])
     A = np.ones(a.shape + (ly,))*-999.
-    k=0
-    if order>1:
+    k = 0
+    if order > 1:
         for i in yc:
-            A[:-i,k] = a[i:]
-            k+=1
+            A[:-i, k] = a[i:]
+            k += 1
         for i in yc:
-            A[i:,k] = a[:-i]
-            k+=1  
+            A[i:, k] = a[:-i]
+            k += 1
     C = np.ma.array(A, mask=(A == -999.).astype(np.int))
     return func(C, axis=(1,))
 
 
-#def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
+# def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
 #    '''
 #    Compute the biweight location with a moving window of size "order"
 #
@@ -212,7 +216,7 @@ def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
 #        sys.exit(1)
 #    if not isinstance(ignore_central, int):
 #        print("The ignore_central value should be an integer")
-#        sys.exit(1)        
+#        sys.exit(1)
 #    if order%2==0:
 #        order+=1
 #    if ignore_central%2==0:
@@ -230,7 +234,7 @@ def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
 #    for i in xrange(ignore_central/2):
 #        ignore.append(order/2 - i - 1)
 #        ignore.append(order/2 + i + 1)
-#    half_order = order / 2    
+#    half_order = order / 2
 #    order_array = np.delete(np.arange(order), ignore)
 #    A = np.zeros((len(a)-order+1, len(order_array)))
 #    k=0
@@ -240,7 +244,7 @@ def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
 #        else:
 #            A[:,k] = a[i:-(order-i-1)]
 #        k+=1
-#    
+#
 #    Ab = func(A, axis=(1,))
 #    A1 = np.zeros((half_order,))
 #    A2 = np.zeros((half_order,))
@@ -257,13 +261,12 @@ def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
 #        A1[i] = func(np.delete(a[:(half_order+i+1)], ignore_l))
 #        A2[-(i+1)] = func(np.delete(a[-(half_order+i+1):], ignore_h))
 #    return np.hstack([A1,Ab,A2])
-    
-    
+
 
 def biweight_location(a, c=6.0, M=None, axis=None, eps=1e-8):
     """
-    Copyright (c) 2011-2016, Astropy Developers        
-    
+    Copyright (c) 2011-2016, Astropy Developers
+
     Compute the biweight location for an array.
 
     Returns the biweight location for the array elements.
@@ -317,12 +320,11 @@ def biweight_location(a, c=6.0, M=None, axis=None, eps=1e-8):
     See Also
     --------
     median_absolute_deviation, biweight_midvariance
-    
+
     Note
     --------
     Copy of the astropy function with the "axis" argument added appropriately.
     """
-
 
     if M is None:
         if isinstance(a, np.ma.MaskedArray):
@@ -333,15 +335,15 @@ def biweight_location(a, c=6.0, M=None, axis=None, eps=1e-8):
         M = func(a, axis=axis)
     else:
         a = np.array(a, copy=False)
-                
-    N = M*1.      
+
+    N = M*1.
     # set up the difference
     if axis is not None:
         for i in axis:
             N = np.expand_dims(N, axis=i)
-            
+
     d = a - N
-    
+
     # set up the weighting
     if axis is not None:
         MAD = median_absolute_deviation(a, axis=axis)
@@ -351,7 +353,7 @@ def biweight_location(a, c=6.0, M=None, axis=None, eps=1e-8):
         MAD = median_absolute_deviation(a)
 
     u = np.where(MAD < eps, 0., d / c / MAD)
-    
+
     # now remove the outlier points
     if isinstance(a, np.ma.MaskedArray):
         mask = (np.abs(u) < 1).astype(np.int) * (1-a.mask.astype(np.int))
@@ -359,12 +361,12 @@ def biweight_location(a, c=6.0, M=None, axis=None, eps=1e-8):
         mask = (np.abs(u) < 1).astype(np.int)
     u = (1 - u ** 2) ** 2
     return M + (d * u * mask).sum(axis=axis) / (u * mask).sum(axis=axis)
-    
-    
+
+
 def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
     """
-    Copyright (c) 2011-2016, Astropy Developers    
-    
+    Copyright (c) 2011-2016, Astropy Developers
+
     Compute the biweight midvariance for an array.
 
     Returns the biweight midvariance for the array elements.
@@ -386,8 +388,8 @@ def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
 
     where MAD is the median absolute deviation.
 
-    :math:`n'` is the number of data for which :math:`|u_i| < 1` holds, while the
-    summations are over all i up to n:
+    :math:`n'` is the number of data for which :math:`|u_i| < 1` holds, while
+    the summations are over all i up to n:
 
     .. math::
 
@@ -430,7 +432,7 @@ def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
     See Also
     --------
     median_absolute_deviation, biweight_location
-    
+
     Note
     --------
     Copy of the astropy function with the "axis" argument added appropriately.
@@ -441,17 +443,17 @@ def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
         else:
             a = np.array(a, copy=False)
             func = np.median
-        if M is None or k>0:
+        if M is None or k > 0:
             M = func(a, axis=axis)
-        N = M*1.      
+        N = M*1.
         # set up the difference
         if axis is not None:
             for i in axis:
                 N = np.expand_dims(N, axis=i)
-    
+
         # set up the difference
         d = np.asarray(a - N)
-    
+
         # set up the weighting
         if axis is not None:
             MAD = median_absolute_deviation(a, axis=axis)
@@ -461,7 +463,7 @@ def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
             MAD = median_absolute_deviation(a)
         # set up the weighting
         u = np.where(MAD < eps, 0., d / c / MAD)
-    
+
         # now remove the outlier points
         if isinstance(a, np.ma.MaskedArray):
             mask = (np.abs(u) < 1).astype(np.int) * (1-a.mask.astype(np.int))
@@ -476,10 +478,10 @@ def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
 
 def is_outlier(points, thresh=3.5):
     """
-    Copyright (c) 2012, Free Software Foundation   
-    
-    
-    Returns a boolean array with True if points are outliers and False 
+    Copyright (c) 2012, Free Software Foundation
+
+
+    Returns a boolean array with True if points are outliers and False
     otherwise.
 
     Parameters:
@@ -497,10 +499,10 @@ def is_outlier(points, thresh=3.5):
     ----------
         Boris Iglewicz and David Hoaglin (1993), "Volume 16: How to Detect and
         Handle Outliers", The ASQC Basic References in Quality Control:
-        Statistical Techniques, Edward F. Mykytka, Ph.D., Editor. 
+        Statistical Techniques, Edward F. Mykytka, Ph.D., Editor.
     """
     if len(points.shape) == 1:
-        points = points[:,None]
+        points = points[:, None]
     median = np.median(points, axis=0)
     diff = np.sum((points - median)**2, axis=-1)
     diff = np.sqrt(diff)
@@ -511,8 +513,6 @@ def is_outlier(points, thresh=3.5):
     return modified_z_score > thresh
 
 
-
-   
 def matrixCheby2D_7(x, y):
     if isinstance(x, (tuple, list)):
         x = np.asarray(x)
@@ -531,9 +531,10 @@ def matrixCheby2D_7(x, y):
     T5y = 16. * y**5 - 20. * y**3 + 5. * y
     T6y = 32. * y**6 - 48. * y**4 + 18. * y**2 - 1
     T7y = 64. * y**7 - 112. * y**5 + 56. * y**3 - 7 * y
-    
-    return np.vstack((T7x, T6x, T5x, T4x, T3x, T2x, x, T7y, T6y, T5y, 
+
+    return np.vstack((T7x, T6x, T5x, T4x, T3x, T2x, x, T7y, T6y, T5y,
                       T4y, T3y, T2y, y, T6x*y, x*T6y, T5x*T2y, T2x*T5y,
-                      T4x*T3y, T3x*T4y, T5x*y, x*T5y, T4x*T2y, T2x*T4y, 
-                      T3x*T3y, T4x*y, x*T4y, T3x*T2y, T2x*T3y, T3x*y, 
-                      x*T3y, T2x*T2y, T2x*y, x*T2y, x*y, np.ones(x.shape))).swapaxes(0,1)
+                      T4x*T3y, T3x*T4y, T5x*y, x*T5y, T4x*T2y, T2x*T4y,
+                      T3x*T3y, T4x*y, x*T4y, T3x*T2y, T2x*T3y, T3x*y,
+                      x*T3y, T2x*T2y, T2x*y, x*T2y, x*y,
+                      np.ones(x.shape))).swapaxes(0, 1)

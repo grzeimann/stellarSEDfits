@@ -1,0 +1,9 @@
+recursive-include stellarSEDfits/data *dat
+recursive-include stellarSEDfits/data/miles_spec *fits
+
+include stellarSEDfits/data/sloan_g
+
+include AUTHORS
+include ez_setup.py
+include LICENCE
+include README.md
