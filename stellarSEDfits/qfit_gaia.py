@@ -119,7 +119,7 @@ def load_prior(basedir):
     zv = np.reshape(Z, a*b)
     xv = np.reshape(X, a*b)
     yv = np.reshape(Y, a*b)
-    P = scint.LinearNDInterpolator(np.array(zip(xv, yv)), zv)
+    P = scint.LinearNDInterpolator(list(np.array(zip(xv, yv))), zv)
     return P
 
 
@@ -191,6 +191,7 @@ def make_plot(vmax, errbounds, stargrid, lnp, ind, normspec,
 
 ##################################################
 
+
 def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
 
     """
@@ -198,19 +199,19 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
       ra  = center RA of field
       dec = center DEC of field
       boxdeg = box size around ra/dec for source retrieval (degrees)
-               
+
     Returns:  array of stars with format
               IDa IDb RA DEC ...
     """
 
     # Absolute floor to photometric errors (mag)
-    min_e = 0.01 # mag
+    min_e = 0.01  # mag
 
     # GAIA2 has ICRS coords precessed to Epoch=2015.5
-    vquery = Vizier(columns=['Source','RA_ICRS','DE_ICRS',
-                             'Gmag','e_Gmag','_RAJ2000','_DEJ2000',
-                             'Plx','e_Plx','pmRA','pmDE',
-                             'BP-RP','Teff','AG','E(BP-RP)'],
+    vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
+                             'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
+                             'Plx', 'e_Plx', 'pmRA', 'pmDE',
+                             'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
                     row_limit=maxsources)
 
     field = coord.SkyCoord(ra=ra, dec=dec,
@@ -248,9 +249,9 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
         # --> Note the Python key sends () to _ in key name
         BmRc = Data['BP-RP'][i] - Data['E_BP-RP_'][i]
 
-        ## Former g-band magnitude calculation using g-i=1 mag fixed
-        ## --> this looks like an equation from GAIA documentation for (G-g) vs (g-i)
-        ## g = G + 0.0939 + 0.6758 * g_i + 0.04 * g_i**2 - 0.003 * g_i**3
+        # Former g-band magnitude calculation using g-i=1 mag fixed
+        # --> this looks like an equation from GAIA documentation for (G-g) vs (g-i)
+        # g = G + 0.0939 + 0.6758 * g_i + 0.04 * g_i**2 - 0.003 * g_i**3
 
         # New g-band magnitude calculation!!
 
@@ -264,7 +265,7 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
         plx_e = Data['e_Plx'][i]
 
         # Definition of "good parallax" measurement from Gaia
-        if plx>0 and plx_e<0.5*plx:
+        if plx > 0 and plx_e < 0.5*plx:
 
             # Distance modulus + uncertainty
             dmod = 10.0 - 5*np.log10(plx)
@@ -278,8 +279,8 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
 
             # Insufficient parallax measurement: dmod->0, gabs->g
             # (also set:  dmod_e==0, gabs_e==0)
-            dmod,dmod_e = 0,0
-            gabs,gabs_e = g,0
+            dmod, dmod_e = 0, 0
+            gabs, gabs_e = g, 0
 
         # Check against GAIA2 flags
         if np.any([j for j in Data.mask[i]]):
@@ -295,7 +296,8 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
 
 ##############################
 
-def pickGAIA(gstars, ra, dec, gcorr): 
+
+def pickGAIA(gstars, ra, dec, gcorr):
 
     """
     Pick best-fitting Gaia star from a set of nearby stars
@@ -303,45 +305,46 @@ def pickGAIA(gstars, ra, dec, gcorr):
       ra  = target star RA
       dec = target star Dec
       gcorr = target star observed g-magnitude after extinction correction
-               
+
     Returns:  Tuple for single "best-fitting" star (coordinates + g mag)
     """
 
     # Defaults for matching
-    ang_e = 0.1 # arcsec (Gaia J2000 vs. SDSS J2000)
-    mag_e = 0.1 # mag
+    ang_e = 0.1  # arcsec (Gaia J2000 vs. SDSS J2000)
+    mag_e = 0.1  # mag
 
     # Indices into the queryGAIA2() output tuple
-    iRA,iDec,igmag=2,3,10
+    iRA, iDec, igmag = 2, 3, 10
 
-    tcoo=coord.SkyCoord(radeg*u.deg,dcdeg*u.deg,frame='fk5')
+    tcoo = coord.SkyCoord(radeg*u.deg, dcdeg*u.deg, frame='fk5')
 
-    nstars=len(gstars)
-    score=np.zeros(nstars)
-    ikeep=-1
-    minscore=1e6
+    nstars = len(gstars)
+    score = np.zeros(nstars)
+    ikeep = -1
+    minscore = 1e6
 
     # Score each Gaia star versus the target
     for i in range(nstars):
-        gstar=gstars[i]
-        scoo=coord.SkyCoord(gstar[iRA]*u.deg,gstar[iDec]*u.deg,frame='fk5')
-        stdist=tcoo.separation(scoo)
-        score[i]=(4*(stdist/(ang_e*u.deg/3600))**2 +
-                  ((gstar[igmag]-gcorr)/mag_e)**2)
-        if score[i]<minscore:
-            minscore=score[i]
-            ikeep=i
+        gstar = gstars[i]
+        scoo = coord.SkyCoord(gstar[iRA]*u.deg, gstar[iDec]*u.deg, frame='fk5')
+        stdist = tcoo.separation(scoo)
+        score[i] = (4*(stdist/(ang_e*u.deg/3600))**2 +
+                    ((gstar[igmag]-gcorr)/mag_e)**2)
+        if score[i] < minscore:
+            minscore = score[i]
+            ikeep = i
 
     # Failure -> null np.array
-    if ikeep<0:
+    if ikeep < 0:
         return np.array([])
 
     # Success -> Single best-match Gaia star
-    gstar=gstars[ikeep]
+    gstar = gstars[ikeep]
     return gstar
 
 ######################################################################
 ######################################################################
+
 
 def main(args=None):
 
@@ -399,39 +402,41 @@ def main(args=None):
     data = np.loadtxt(args.filename)
 
     # Shot / ID / RA / Dec get their own vector arrays (redundant to "data")
-    shot, ID = np.loadtxt(args.filename, dtype=int, usecols=[0,1], unpack=True)
-    radeg, dcdeg, gmag = np.loadtxt(args.filename, usecols=[2,3,5], unpack=True)
+    shot, ID = np.loadtxt(args.filename, dtype=int, usecols=[0, 1],
+                          unpack=True)
+    radeg, dcdeg, gmag = np.loadtxt(args.filename, usecols=[2, 3, 5],
+                                    unpack=True)
 
     # Number of observed stars
-    nstars=len(data)
+    nstars = len(data)
 
     # GAIA catalog search against star positions
-    gabs=np.zeros(nstars)
-    gabs_e=np.zeros(nstars)
+    gabs = np.zeros(nstars)
+    gabs_e = np.zeros(nstars)
     a_g = ebv*ext_vector[1]
 
     for i in range(nstars):
         # failed query returns a null np.array()
         # successful query returns tuple for each Gaia star in the box
-        gstars=queryGAIA2(radeg[i],dcdeg[i],0.0015)
-        if len(gstars)>1:
+        gstars = queryGAIA2(radeg[i], dcdeg[i], 0.0015)
+        if len(gstars) > 1:
             # pick the counterpart star
-            gstar=pickGAIA(gstars,radeg[i],dcdeg[i],gmag[i]-a_g)
-            gabs[i],gabs_e[i]=gstar[15],gstar[16]
-        elif len(gstars)==1:
+            gstar = pickGAIA(gstars, radeg[i], dcdeg[i], gmag[i]-a_g)
+            gabs[i], gabs_e[i] = gstar[15], gstar[16]
+        elif len(gstars) == 1:
             # one candidate counterpart, assumed valid
-            gstar=gstars[0]
-            gabs[i],gabs_e[i]=gstar[15],gstar[16]
+            gstar = gstars[0]
+            gabs[i], gabs_e[i] = gstar[15], gstar[16]
         else:
             # leave gabs[i],gabs_e[i] at zero
             # --> absolute mag might be zero, but uncertainty will never
-            #     be zero for a successful match 
+            #     be zero for a successful match
             continue
 
     # Columns from data and stargrid for u,g,r,i (z is a +1 in loop)
     # --> These are the "blue" side of the four SDSS colors that we
     #     construct from the five SDSS filters
-    cols = [4,5,6,7]
+    cols = [4, 5, 6, 7]
 
     # Guessing at an error vector from modeling and photometry
     # (no errors provided)
@@ -442,7 +447,7 @@ def main(args=None):
     err_vector = np.array([e1, e2, e2, e2])
 
     # Save the "no extinction" version of "stargrid"
-    stargrid_raw=stargrid
+    stargrid_raw = stargrid
 
     # Adjust model SDSS mags in "stargrid" for extinction
     stargrid[:, 4:9] = stargrid[:, 4:9] + ext_vector*ebv
@@ -487,15 +492,18 @@ def main(args=None):
     #     calculation needs padded (n_stars) # (n_model) arrays
     useg = np.where(gabs_e > 0)
     notg = np.where(gabs_e == 0)
-    ddg = ((gabs[useg,np.newaxis]-stargrid_raw[:,5])/gabs_e[useg,np.newaxis])**2
+    ddg = ((gabs[useg, np.newaxis]-stargrid_raw[:, 5])
+           / gabs_e[useg, np.newaxis])**2
 
     # Gaia-updated lnlike
-    lnlike[useg] = lnlike[useg] - 0.5*(ddg + np.log(2*np.pi*gabs_e[useg,np.newaxis]**2))
-    # ??? update lnlike where Gaia is not used? 
+    lnlike[useg] = lnlike[useg] - 0.5*(ddg + np.log(2*np.pi
+                                                    * gabs_e[useg,
+                                                             np.newaxis]**2))
+    # ??? update lnlike where Gaia is not used?
 
     # Gaia-updated chi-squared
     chi2[useg] = chi2[useg] + ddg
-    chi2[notg] = chi2[notg] + 1 # to equalize degrees of freedom (???)
+    chi2[notg] = chi2[notg] + 1  # to equalize degrees of freedom (???)
 
     # Calculate prior and add to likelihood for probability
     lnprior = P(stargrid[:, 0], stargrid[:, 1])
@@ -522,9 +530,9 @@ def main(args=None):
 
         # n>2 acceptable spectra:
         #     * average spectrum (normspec) is biweight location of
-        #       acceptable spectra 
+        #       acceptable spectra
         #     * uncertainty (stdspec) is 50% of (max-min) of
-        #       acceptable spectra 
+        #       acceptable spectra
         if len(normspec) > 2:
             avgspec = biweight_location(normspec, axis=(0,))
             mn = np.min(normspec, axis=0)
