@@ -53,7 +53,7 @@ entry_points = {'console_scripts':
 setup(
     # package description and version
     name="stellarSEDfits",
-    version='1.0.0',
+    version='1.0.1',
     author="Greg Zeiman",
     author_email="gregz@astro.as.utexas.edu",
     description="Stellar SED fitting code",
