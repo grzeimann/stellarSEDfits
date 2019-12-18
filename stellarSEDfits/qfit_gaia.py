@@ -21,7 +21,7 @@ from astropy.io import fits
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # from utils import biweight_location, biweight_bin
 from stellarSEDfits.utils import biweight_location, biweight_bin
-from astroquery.vizier import Vizier
+from astroquery.vizier import Vizier, Conf
 import astropy.units as u
 import astropy.coordinates as coord
 # from astropy.coordinates import SkyCoord
@@ -208,12 +208,21 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
     min_e = 0.01  # mag
 
     # GAIA2 has ICRS coords precessed to Epoch=2015.5
-    vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
-                             'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
-                             'Plx', 'e_Plx', 'pmRA', 'pmDE',
-                             'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
-                    row_limit=maxsources)
+    try:
+        vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
+                                 'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
+                                 'Plx', 'e_Plx', 'pmRA', 'pmDE',
+                                 'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
+                        row_limit=maxsources)
 
+    except Exception:
+        vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
+                                 'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
+                                 'Plx', 'e_Plx', 'pmRA', 'pmDE',
+                                 'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
+                    row_limit=maxsources,
+                    vizier_server='vizier.cfa.harvard.edu')
+        
     field = coord.SkyCoord(ra=ra, dec=dec,
                            unit=(u.deg, u.deg),
                            frame='fk5')
@@ -414,6 +423,7 @@ def main(args=None):
     gabs = np.zeros(nstars)
     gabs_e = np.zeros(nstars)
     a_g = ebv*ext_vector[1]
+    gaia_flag = np.zeros(nstars)
 
     for i in range(nstars):
         # failed query returns a null np.array()
@@ -423,16 +433,18 @@ def main(args=None):
             # pick the counterpart star
             gstar = pickGAIA(gstars, radeg[i], dcdeg[i], gmag[i]-a_g)
             gabs[i], gabs_e[i] = gstar[15], gstar[16]
+            gaia_flag[i] = 1
         elif len(gstars) == 1:
             # one candidate counterpart, assumed valid
             gstar = gstars[0]
             gabs[i], gabs_e[i] = gstar[15], gstar[16]
+            gaia_flag[i] = 1
         else:
             # leave gabs[i],gabs_e[i] at zero
             # --> absolute mag might be zero, but uncertainty will never
             #     be zero for a successful match
             continue
-
+            
     # Columns from data and stargrid for u,g,r,i (z is a +1 in loop)
     # --> These are the "blue" side of the four SDSS colors that we
     #     construct from the five SDSS filters
@@ -510,8 +522,8 @@ def main(args=None):
     lnprob = lnlike + lnprior
 
     # Loop through all sources to best fit spectra with errors
-    for lnp, sh, Id, m, chi in zip(lnprob, shot, ID, data[:, 4:6], chi2):
-
+    for lnp, sh, Id, m, chi, gf in zip(lnprob, shot, ID, data[:, 4:6], chi2, gaia_flag):
+    
         # third-highest log-likelihood as reference
         bv = np.argsort(lnp)[-3]
         vmax = lnp[bv]
@@ -553,7 +565,7 @@ def main(args=None):
         n, d = F.shape
         F1 = np.zeros((n+1, d))
         F1[1:, :] = F
-        F1[0, :] = [chi[bv], 0, 0]
+        F1[0, :] = [chi[bv], gf, 0]
         np.savetxt(op.join(args.outfolder, '%06d_%i.txt' % (sh, Id)), F1)
         if args.make_plot:
             make_plot(vmax, errbounds, stargrid, lnp, ind, normspec,
