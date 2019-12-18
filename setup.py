@@ -48,7 +48,8 @@ install_requires = ['numpy', 'scipy', 'astropy', 'matplotlib', 'astroquery']
 # entry points
 # scripts
 entry_points = {'console_scripts':
-                ['quick_fit = stellarSEDfits.quick_fit:main']}
+                ['quick_fit = stellarSEDfits.quick_fit:main',
+                 'qfit_gaia = stellarSEDfits.qfit_gaia:main']}
 
 setup(
     # package description and version
