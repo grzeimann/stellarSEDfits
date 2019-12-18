@@ -119,7 +119,7 @@ def load_prior(basedir):
     zv = np.reshape(Z, a*b)
     xv = np.reshape(X, a*b)
     yv = np.reshape(Y, a*b)
-    P = scint.LinearNDInterpolator(list(np.array(zip(xv, yv))), zv)
+    P = scint.LinearNDInterpolator(np.array(list(zip(xv, yv))), zv)
     return P
 
 
