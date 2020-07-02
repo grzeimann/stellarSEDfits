@@ -428,12 +428,18 @@ def main(args=None):
     for i in range(nstars):
         # failed query returns a null np.array()
         # successful query returns tuple for each Gaia star in the box
+        
         gstars = queryGAIA2(radeg[i], dcdeg[i], 0.0015)
+        
         if len(gstars) > 1:
             # pick the counterpart star
-            gstar = pickGAIA(gstars, radeg[i], dcdeg[i], gmag[i]-a_g)
-            gabs[i], gabs_e[i] = gstar[15], gstar[16]
-            gaia_flag[i] = 1
+            try:
+                gstar = pickGAIA(gstars, radeg[i], dcdeg[i], gmag[i]-a_g)
+                gabs[i], gabs_e[i] = gstar[15], gstar[16]
+                gaia_flag[i] = 1
+            except Exception:
+                print("pickGAIA failed for: ", str(data[i][1]))
+                continue
         elif len(gstars) == 1:
             # one candidate counterpart, assumed valid
             gstar = gstars[0]
