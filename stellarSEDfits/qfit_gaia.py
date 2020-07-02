@@ -209,35 +209,18 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
     min_e = 0.01  # mag
 
     # GAIA2 has ICRS coords precessed to Epoch=2015.5
-
-    foundserver = False
     t0 = time.time()
     querytime = 0
-    
+
     while querytime < 1:
         vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
                                  'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
                                  'Plx', 'e_Plx', 'pmRA', 'pmDE',
                                  'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
-                        row_limit=maxsources)
+                        row_limit=maxsources,
+                        vizier_server='vizier.cfa.harvard.edu')
         querytime = time.time() - t0
 
-    if not foundserver:
-        t0 = time.time()
-        querytime = 0
-
-        while querytime < 1:
-            vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
-                                     'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
-                                     'Plx', 'e_Plx', 'pmRA', 'pmDE',
-                                     'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
-                            row_limit=maxsources,
-                            vizier_server='vizier.cfa.harvard.edu')
-            querytime = time.time() - t0
-
-    if not foundserver:
-        print('Could not access GAIA server, defaulting to SDSS')
-        return np.array([])
         
     field = coord.SkyCoord(ra=ra, dec=dec,
                            unit=(u.deg, u.deg),
