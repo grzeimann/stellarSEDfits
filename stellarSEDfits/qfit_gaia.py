@@ -11,6 +11,7 @@ First working version: 12 Sep 2019
 import numpy as np
 import argparse as ap
 import os.path as op
+import time
 
 import matplotlib
 matplotlib.use('agg')
@@ -208,20 +209,35 @@ def queryGAIA2(ra, dec, boxdeg, maxsources=10000):
     min_e = 0.01  # mag
 
     # GAIA2 has ICRS coords precessed to Epoch=2015.5
-    try:
+
+    foundserver = False
+    t0 = time.time()
+    querytime = 0
+    
+    while querytime < 1:
         vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
                                  'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
                                  'Plx', 'e_Plx', 'pmRA', 'pmDE',
                                  'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
                         row_limit=maxsources)
+        querytime = time.time() - t0
 
-    except Exception:
-        vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
-                                 'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
-                                 'Plx', 'e_Plx', 'pmRA', 'pmDE',
-                                 'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
-                    row_limit=maxsources,
-                    vizier_server='vizier.cfa.harvard.edu')
+    if not foundserver:
+        t0 = time.time()
+        querytime = 0
+
+        while querytime < 1:
+            vquery = Vizier(columns=['Source', 'RA_ICRS', 'DE_ICRS',
+                                     'Gmag', 'e_Gmag', '_RAJ2000', '_DEJ2000',
+                                     'Plx', 'e_Plx', 'pmRA', 'pmDE',
+                                     'BP-RP', 'Teff', 'AG', 'E(BP-RP)'],
+                            row_limit=maxsources,
+                            vizier_server='vizier.cfa.harvard.edu')
+            querytime = time.time() - t0
+
+    if not foundserver:
+        print('Could not access GAIA server, defaulting to SDSS')
+        return np.array([])
         
     field = coord.SkyCoord(ra=ra, dec=dec,
                            unit=(u.deg, u.deg),
@@ -428,9 +444,9 @@ def main(args=None):
     for i in range(nstars):
         # failed query returns a null np.array()
         # successful query returns tuple for each Gaia star in the box
-        
+
         gstars = queryGAIA2(radeg[i], dcdeg[i], 0.0015)
-        
+                    
         if len(gstars) > 1:
             # pick the counterpart star
             try:
