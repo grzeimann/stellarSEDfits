@@ -98,7 +98,7 @@ def biweight_bin(xv, x, y):
     A = np.ones((len(xv), mxcol))*-999.
     for i, v in enumerate(xv):
         A[i, :len(sel_list[i])] = y[sel_list[i]]
-    C = np.ma.array(A, mask=(A == -999.).astype(np.int))
+    C = np.ma.array(A, mask=(A == -999.).astype(np.int32))
     return biweight_location(C, axis=(1,))
 
 
@@ -171,7 +171,7 @@ def biweight_filter2d(a, Order, Ignore_central=(3, 3), c=6.0, M=None,
         for j in xc:
             A[:, j:, k] = a[:, :-j]
             k += 1
-    C = np.ma.array(A, mask=(A == -999.).astype(np.int))
+    C = np.ma.array(A, mask=(A == -999.).astype(np.int32))
     return func(C, axis=(2,))
 
 
@@ -202,7 +202,7 @@ def biweight_filter(a, order, ignore_central=3, c=6.0, M=None, func=None):
         for i in yc:
             A[i:, k] = a[:-i]
             k += 1
-    C = np.ma.array(A, mask=(A == -999.).astype(np.int))
+    C = np.ma.array(A, mask=(A == -999.).astype(np.int32))
     return func(C, axis=(1,))
 
 
@@ -356,9 +356,9 @@ def biweight_location(a, c=6.0, M=None, axis=None, eps=1e-8):
 
     # now remove the outlier points
     if isinstance(a, np.ma.MaskedArray):
-        mask = (np.abs(u) < 1).astype(np.int) * (1-a.mask.astype(np.int))
+        mask = (np.abs(u) < 1).astype(np.int32) * (1-a.mask.astype(np.int32))
     else:
-        mask = (np.abs(u) < 1).astype(np.int)
+        mask = (np.abs(u) < 1).astype(np.int32)
     u = (1 - u ** 2) ** 2
     return M + (d * u * mask).sum(axis=axis) / (u * mask).sum(axis=axis)
 
@@ -466,10 +466,10 @@ def biweight_midvariance(a, c=15.0, M=None, axis=None, eps=1e-8, niter=1):
 
         # now remove the outlier points
         if isinstance(a, np.ma.MaskedArray):
-            mask = (np.abs(u) < 1).astype(np.int) * (1-a.mask.astype(np.int))
+            mask = (np.abs(u) < 1).astype(np.int32) * (1-a.mask.astype(np.int32))
             a.mask = 1 - mask
         else:
-            mask = (np.abs(u) < 1).astype(np.int)
+            mask = (np.abs(u) < 1).astype(np.int32)
     u = u ** 2
     n = mask.sum(axis=axis)
     return n ** 0.5 * (mask * d**2 * (1 - u) ** 4).sum(axis=axis) ** 0.5\
